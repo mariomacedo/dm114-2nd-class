@@ -1,5 +1,6 @@
 package br.com.siecola.androidproject02.network
 
+import br.com.siecola.androidproject02.OauthTokenInterceptor
 import com.jakewharton.retrofit2.adapter.kotlin.coroutines.CoroutineCallAdapterFactory
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -12,6 +13,28 @@ import retrofit2.http.*
 import java.util.concurrent.TimeUnit
 
 private const val BASE_URL = "https://sales-provider.appspot.com"
+
+private val moshi = Moshi.Builder()
+    .add(KotlinJsonAdapterFactory())
+    .build()
+
+private val okHttpClient = OkHttpClient.Builder()
+    .connectTimeout(60, TimeUnit.SECONDS)
+    .readTimeout(60, TimeUnit.SECONDS)
+    .addInterceptor(OauthTokenInterceptor())
+    .authenticator(OauthTokenAuthenticator())
+    .build()
+
+private val retrofit = Retrofit.Builder()
+    .baseUrl(BASE_URL)
+    .addConverterFactory(MoshiConverterFactory.create(moshi))
+    .addCallAdapterFactory(CoroutineCallAdapterFactory())
+    .client(okHttpClient)
+    .build()
+
+val retrofitService: SalesApiService by lazy {
+    retrofit.create(SalesApiService::class.java)
+}
 
 interface SalesApiService {
 
@@ -30,25 +53,6 @@ interface SalesApiService {
 }
 
 object SalesApi {
-
-    private val moshi = Moshi.Builder()
-        .add(KotlinJsonAdapterFactory())
-        .build()
-
-    private val okHttpClient = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .addInterceptor(OauthTokenInterceptor())
-        .authenticator(OauthTokenAuthenticator())
-        .build()
-
-    private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
-        .addConverterFactory(MoshiConverterFactory.create(moshi))
-        .addCallAdapterFactory(CoroutineCallAdapterFactory())
-        .client(okHttpClient)
-        .build()
-
     val retrofitService: SalesApiService by lazy {
         retrofit.create(SalesApiService::class.java)
     }
